@@ -1,194 +1,1245 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
+from datetime import datetime
+import pandas as pd
+import os
+import pickle
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+from tkcalendar import Calendar
 
-# C extensions
-*.so
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+class No9PilatesApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("No.9 PILATES - Öğrenci Kayıt ve Takip Sistemi")
+        self.root.geometry("1200x800")
+        self.root.configure(bg="#f5e6d0")  # Sütlü kahve arka plan
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+        # Veri yapıları
+        self.ogrenciler = []
+        self.ders_kayitlari = []
+        self.bilanco_data = []
+        self.seans_kayitlari = [] # Yeni seans kayıtları listesi
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+        # Verileri yükle
+        self.load_data()
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
+        # Stil ayarları
+        self.style = ttk.Style()
+        self.style.configure("TFrame", background="#f5e6d0")
+        self.style.configure("TButton", font=("Arial", 10), padding=5, background="#d4b483", foreground="black")
+        self.style.configure("TLabel", font=("Arial", 10), background="#f5e6d0")
+        self.style.configure("Header.TLabel", font=("Arial", 16, "bold"), background="#f5e6d0")
+        self.style.map("Red.TButton", foreground=[('active', 'red')], background=[('active', 'white')])
+        self.style.theme_use('clam')  # Daha modern bir tema
+        self.style.configure(".", font=("Arial", 10), background="#f5f5f5")
+        self.style.configure("TButton", padding=6, relief="flat", background="#89735a", foreground="white")
+        self.style.map("TButton", background=[("active", "#9d8f7f")])
+        self.style.configure("Treeview", rowheight=25)
+        self.style.configure("Treeview.Heading", font=("Arial", 10, "bold"))
 
-# Translations
-*.mo
-*.pot
+        # Ana sayfa
+        self.create_main_page()
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
+    def load_data(self):
+        try:
+            if os.path.exists("ogrenciler.pkl"):
+                with open("ogrenciler.pkl", "rb") as f:
+                    self.ogrenciler = pickle.load(f)
 
-# Flask stuff:
-instance/
-.webassets-cache
+            if os.path.exists("ders_kayitlari.pkl"):
+                with open("ders_kayitlari.pkl", "rb") as f:
+                    self.ders_kayitlari = pickle.load(f)
 
-# Scrapy stuff:
-.scrapy
+            if os.path.exists("bilanco_data.pkl"):
+                with open("bilanco_data.pkl", "rb") as f:
+                    self.bilanco_data = pickle.load(f)
 
-# Sphinx documentation
-docs/_build/
+            if os.path.exists("seans_kayitlari.pkl"):
+                with open("seans_kayitlari.pkl", "rb") as f:
+                    self.seans_kayitlari = pickle.load(f)
 
-# PyBuilder
-.pybuilder/
-target/
+        except Exception as e:
+            messagebox.showerror("Hata", f"Veri yüklenirken hata oluştu: {str(e)}")
 
-# Jupyter Notebook
-.ipynb_checkpoints
 
-# IPython
-profile_default/
-ipython_config.py
+    def save_data(self):
+        try:
+            with open("ogrenciler.pkl", "wb") as f:
+                pickle.dump(self.ogrenciler, f)
 
-# pyenv
-#   For a library or package, you might want to ignore these files since the code is
-#   intended to run in multiple environments; otherwise, check them in:
-# .python-version
+            with open("ders_kayitlari.pkl", "wb") as f:
+                pickle.dump(self.ders_kayitlari, f)
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+            with open("bilanco_data.pkl", "wb") as f:
+                pickle.dump(self.bilanco_data, f)
 
-# UV
-#   Similar to Pipfile.lock, it is generally recommended to include uv.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#uv.lock
+            with open("seans_kayitlari.pkl", "wb") as f:
+                pickle.dump(self.seans_kayitlari, f)
+        except Exception as e:
+            messagebox.showerror("Hata", f"Veri kaydedilirken hata oluştu: {str(e)}")
 
-# poetry
-#   Similar to Pipfile.lock, it is generally recommended to include poetry.lock in version control.
-#   This is especially recommended for binary packages to ensure reproducibility, and is more
-#   commonly ignored for libraries.
-#   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-#poetry.lock
+    def clear_frame(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
-# pdm
-#   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
-#pdm.lock
-#   pdm stores project-wide configurations in .pdm.toml, but it is recommended to not include it
-#   in version control.
-#   https://pdm.fming.dev/latest/usage/project/#working-with-version-control
-.pdm.toml
-.pdm-python
-.pdm-build/
+    def create_ogrenci_arama_page(self):
+        self.clear_frame()
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
-__pypackages__/
+        # Arama çubuğu
+        search_frame = ttk.Frame(self.root)
+        search_frame.pack(pady=10, padx=10, fill=tk.X)
 
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
+        ttk.Label(search_frame, text="Ara:").pack(side=tk.LEFT)
+        self.search_var = tk.StringVar()
+        search_entry = ttk.Entry(search_frame, textvariable=self.search_var, width=40)
+        search_entry.pack(side=tk.LEFT, padx=5)
+        search_entry.bind("<KeyRelease>", lambda e: self.filter_ogrenciler())
 
-# SageMath parsed files
-*.sage.py
+        # Filtreleme seçenekleri
+        filter_frame = ttk.Frame(self.root)
+        filter_frame.pack(pady=5, padx=10, fill=tk.X)
 
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
+        ttk.Label(filter_frame, text="Filtrele:").pack(side=tk.LEFT)
+        self.filter_var = tk.StringVar(value="Tümü")
+        filters = ["Tümü", "Aktif", "Pasif", "Tek", "Düet", "Grup 3", "Grup 4"]
+        for f in filters:
+            ttk.Radiobutton(filter_frame, text=f, variable=self.filter_var,
+                            value=f, command=self.filter_ogrenciler).pack(side=tk.LEFT, padx=5)
 
-# Spyder project settings
-.spyderproject
-.spyproject
+        # Öğrenci listesi
+        self.ogrenci_tree = ttk.Treeview(self.root, columns=("ID", "Ad", "Soyad", "Paket", "Durum"), show="headings")
+        for col in ["ID", "Ad", "Soyad", "Paket", "Durum"]:
+            self.ogrenci_tree.heading(col, text=col)
+            self.ogrenci_tree.column(col, width=100, anchor=tk.CENTER)
+        self.ogrenci_tree.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-# Rope project settings
-.ropeproject
+        self.filter_ogrenciler()
 
-# mkdocs documentation
-/site
+    def filter_ogrenciler(self):
+        query = self.search_var.get().lower()
+        filter_type = self.filter_var.get()
 
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
+        for row in self.ogrenci_tree.get_children():
+            self.ogrenci_tree.delete(row)
 
-# Pyre type checker
-.pyre/
+        for ogrenci in self.ogrenciler:
+            matches_query = (query in ogrenci["ad"].lower() or
+                             query in ogrenci["soyad"].lower() or
+                             query in ogrenci["telefon"])
 
-# pytype static type analyzer
-.pytype/
+            matches_filter = (filter_type == "Tümü" or
+                              (filter_type == "Aktif" and ogrenci["aktif"]) or
+                              (filter_type == "Pasif" and not ogrenci["aktif"]) or
+                              (filter_type == ogrenci["paket"]))
 
-# Cython debug symbols
-cython_debug/
+            if matches_query and matches_filter:
+                self.ogrenci_tree.insert("", tk.END, values=(
+                    ogrenci["id"],
+                    ogrenci["ad"],
+                    ogrenci["soyad"],
+                    ogrenci["paket"],
+                    "Aktif" if ogrenci["aktif"] else "Pasif"
+                ))
 
-# PyCharm
-#  JetBrains specific template is maintained in a separate JetBrains.gitignore that can
-#  be found at https://github.com/github/gitignore/blob/main/Global/JetBrains.gitignore
-#  and can be added to the global gitignore or merged into this file.  For a more nuclear
-#  option (not recommended) you can uncomment the following to ignore the entire idea folder.
-#.idea/
+    def create_main_page(self):
+        self.clear_frame()
 
-# Abstra
-# Abstra is an AI-powered process automation framework.
-# Ignore directories containing user credentials, local state, and settings.
-# Learn more at https://abstra.io/docs
-.abstra/
+        # Başlık
+        header_frame = ttk.Frame(self.root)
+        header_frame.pack(pady=20)
 
-# Visual Studio Code
-#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
-#  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#  and can be added to the global gitignore or merged into this file. However, if you prefer, 
-#  you could uncomment the following to ignore the enitre vscode folder
-# .vscode/
+        ttk.Label(header_frame, text="No.9 PILATES", style="Header.TLabel").pack()
+        ttk.Label(header_frame, text="Öğrenci Kayıt ve Takip Sistemi", font=("Arial", 12)).pack()
 
-# Ruff stuff:
-.ruff_cache/
+        # Butonlar
+        buttons_frame = ttk.Frame(self.root)
+        buttons_frame.pack(pady=50)
 
-# PyPI configuration file
-.pypirc
+        button_texts = [
+            "1. Yeni Kayıt",
+            "2. Güncel Öğrenci Listesi",
+            "3. Ders Takip Listesi",
+            "4. Öğrenci Seans Bilgisi",  # Yeni buton
+            "5. Randevu Takvimi",
+            "6. Tüm Öğrenciler",
+            "7. Bilanço",
+            "8. Excel'e Aktar",
+            "9. Kayıt Sil",
+            "10. Programı Sıfırla"
+        ]
 
-# Cursor
-#  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
-#  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data
-#  refer to https://docs.cursor.com/context/ignore-files
-.cursorignore
-.cursorindexingignore
+        button_commands = [
+            self.create_kayit_page,
+            self.create_guncel_liste_page,
+            self.create_ders_takip_page,
+            self.create_seans_bilgisi_page,  # Yeni fonksiyon
+            self.create_randevu_takvimi,
+            self.create_tum_ogrenciler_page,
+            self.create_bilanco_page,
+            self.export_to_excel,
+            self.delete_record_page,
+            self.reset_program
+        ]
+
+        for i, (text, cmd) in enumerate(zip(button_texts, button_commands), 1):
+            btn = ttk.Button(buttons_frame, text=text, command=cmd, width=25)
+            btn.grid(row=(i - 1) // 3, column=(i - 1) % 3, padx=10, pady=10)
+
+
+        # Footer kısmı için alternatif stil
+        footer_frame = ttk.Frame(self.root, style="Footer.TFrame")
+        footer_frame.pack(side=tk.BOTTOM, fill=tk.X, pady=5)
+
+        # Sol taraf
+        ttk.Label(footer_frame,
+                  text="© 2025 No.9 PILATES",
+                  font=("Arial", 8, "bold"),
+                  foreground="#555555").pack(side=tk.BOTTOM, padx=10)
+
+        # Sağ taraf
+        ttk.Label(footer_frame,
+                  text="Developed by K.AKGÜN",
+                  font=("Arial", 7, "italic"),
+                  foreground="#333333").pack(side=tk.RIGHT, padx=10)
+
+        # __init__ fonksiyonuna bu stili eklemeyi unutmayın:
+        self.style.configure("Footer.TFrame", background="#f5e6d0")
+
+    def check_password(self):
+        password = simpledialog.askstring("Parola Doğrulama", "Parolayı giriniz:", show='*')
+        return password == "no9"
+
+    def reset_program(self):
+        if not self.check_password():
+            messagebox.showerror("Hata", "Geçersiz parola!")
+            return
+
+        if messagebox.askyesno("Onay", "Tüm veriler silinecek. Emin misiniz?"):
+            try:
+                self.ogrenciler = []
+                self.ders_kayitlari = []
+                self.bilanco_data = []
+
+                # Dosyaları sil
+                if os.path.exists("ogrenciler.pkl"):
+                    os.remove("ogrenciler.pkl")
+                if os.path.exists("ders_kayitlari.pkl"):
+                    os.remove("ders_kayitlari.pkl")
+                if os.path.exists("bilanco_data.pkl"):
+                    os.remove("bilanco_data.pkl")
+
+                messagebox.showinfo("Başarılı", "Program başarıyla sıfırlandı!")
+                self.create_main_page()
+            except Exception as e:
+                messagebox.showerror("Hata", f"Sıfırlama sırasında hata oluştu: {str(e)}")
+
+    def delete_record_page(self):
+        self.clear_frame()
+
+        # Geri dön butonu
+        ttk.Button(self.root, text="Ana Sayfa", command=self.create_main_page).pack(anchor=tk.NW, padx=10, pady=10)
+
+        # Başlık
+        ttk.Label(self.root, text="Kayıt Silme", style="Header.TLabel").pack(pady=20)
+
+        # Öğrenci listesi
+        columns = ("ID", "Ad", "Soyad", "Paket", "Telefon", "Tarih", "Durum")
+        tree = ttk.Treeview(self.root, columns=columns, show="headings", height=15)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=100, anchor=tk.CENTER)
+
+        for ogrenci in self.ogrenciler:
+            durum = "Aktif" if ogrenci["aktif"] else "Pasif"
+            tree.insert("", tk.END, values=(
+                ogrenci["id"],
+                ogrenci["ad"],
+                ogrenci["soyad"],
+                ogrenci["paket"],
+                ogrenci["telefon"],
+                ogrenci["tarih"],
+                durum
+            ))
+
+        tree.pack(pady=10)
+
+        # Silme butonu
+        def delete_selected():
+            selected_item = tree.focus()
+            if not selected_item:
+                messagebox.showerror("Hata", "Lütfen silmek istediğiniz kaydı seçiniz!")
+                return
+
+            if not self.check_password():
+                messagebox.showerror("Hata", "Geçersiz parola!")
+                return
+
+            values = tree.item(selected_item, "values")
+            ogrenci_id = int(values[0])
+
+            if messagebox.askyesno("Onay",
+                                   f"{values[1]} {values[2]} isimli öğrenciyi silmek istediğinize emin misiniz?"):
+                try:
+                    # Öğrenciyi sil
+                    self.ogrenciler = [o for o in self.ogrenciler if o["id"] != ogrenci_id]
+
+                    # İlgili ders kayıtlarını sil
+                    self.ders_kayitlari = [d for d in self.ders_kayitlari if d["ogrenci_id"] != ogrenci_id]
+
+                    # İlgili bilanço verilerini sil
+                    self.bilanco_data = [b for b in self.bilanco_data if b["ogrenci_id"] != ogrenci_id]
+
+                    # ID'leri yeniden düzenle
+                    self.reorganize_ids()
+
+                    self.save_data()
+                    messagebox.showinfo("Başarılı", "Kayıt başarıyla silindi!")
+                    self.delete_record_page()
+                except Exception as e:
+                    messagebox.showerror("Hata", f"Silme işlemi sırasında hata oluştu: {str(e)}")
+
+        ttk.Button(self.root, text="Seçili Kaydı Sil", command=delete_selected).pack(pady=10)
+
+    def reorganize_ids(self):
+        # Öğrenci ID'lerini yeniden düzenle
+        for i, ogrenci in enumerate(self.ogrenciler, 1):
+            ogrenci["id"] = i
+
+        # Ders kayıtlarını güncelle
+        for kayit in self.ders_kayitlari:
+            ogrenci = next((o for o in self.ogrenciler if o["ad"] == kayit["ad"] and o["soyad"] == kayit["soyad"]),
+                           None)
+            if ogrenci:
+                kayit["ogrenci_id"] = ogrenci["id"]
+                kayit["id"] = len(self.ders_kayitlari) + 1
+
+        # Bilanço verilerini güncelle
+        for bilanco in self.bilanco_data:
+            ogrenci = next((o for o in self.ogrenciler if o["ad"] == bilanco["ad"] and o["soyad"] == bilanco["soyad"]),
+                           None)
+            if ogrenci:
+                bilanco["ogrenci_id"] = ogrenci["id"]
+                bilanco["id"] = len(self.bilanco_data) + 1
+
+    def create_kayit_page(self):
+        self.clear_frame()
+
+        # Geri dön butonu
+        ttk.Button(self.root, text="Ana Sayfa", command=self.create_main_page).pack(anchor=tk.NW, padx=10, pady=10)
+
+        # Başlık
+        ttk.Label(self.root, text="Yeni Öğrenci Kaydı", style="Header.TLabel").pack(pady=20)
+
+        # Form alanları
+        form_frame = ttk.Frame(self.root)
+        form_frame.pack(pady=10)
+
+        labels = [
+            "Ad:", "Soyad:", "Paket:", "Telefon No:",
+            "Tarih:", "Ücret:", "Ödenen:", "Ders Saati:", "Açıklama:"
+        ]
+
+        self.entries = {}
+        self.date_var = tk.StringVar()
+
+        for i, label in enumerate(labels):
+            ttk.Label(form_frame, text=label).grid(row=i, column=0, padx=5, pady=5, sticky=tk.E)
+
+            if label == "Paket:":
+                self.paket_var = tk.StringVar()
+                paket_options = ["Tek", "Düet", "Grup 3", "Grup 4"]
+                entry = ttk.Combobox(form_frame, textvariable=self.paket_var, values=paket_options, state="readonly")
+                self.paket_var.set(paket_options[0])
+            elif label == "Telefon No:":
+                self.phone_var = tk.StringVar(value="0")
+                entry = ttk.Entry(form_frame, textvariable=self.phone_var)
+            elif label == "Tarih:":
+                entry = ttk.Button(form_frame, text="Tarih Seç", command=self.select_date)
+                self.date_label = ttk.Label(form_frame, text="", font=("Arial", 10))
+                self.date_label.grid(row=i, column=2, padx=5, pady=5, sticky=tk.W)
+            elif label == "Ücret:" or label == "Ödenen:" or label == "Ders Saati:":
+                entry = ttk.Entry(form_frame, validate="key")
+                entry['validatecommand'] = (entry.register(self.validate_number), '%P')
+            else:
+                entry = ttk.Entry(form_frame)
+
+            entry.grid(row=i, column=1, padx=5, pady=5, sticky=tk.W)
+            self.entries[label[:-1]] = entry
+
+        # Kalan tutar
+        ttk.Label(form_frame, text="Kalan Tutar:").grid(row=len(labels), column=0, padx=5, pady=5, sticky=tk.E)
+        self.kalan_tutar_label = ttk.Label(form_frame, text="0", font=("Arial", 10, "bold"))
+        self.kalan_tutar_label.grid(row=len(labels), column=1, padx=5, pady=5, sticky=tk.W)
+
+        # Kayıt butonu
+        ttk.Button(self.root, text="Kaydet", command=self.save_student).pack(pady=20)
+
+    def select_date(self):
+        top = tk.Toplevel(self.root)
+        top.title("Tarih Seç")
+
+        cal = Calendar(top, selectmode='day', year=datetime.now().year, month=datetime.now().month,
+                       day=datetime.now().day)
+        cal.pack(pady=10)
+
+        def set_date():
+            selected_date = cal.get_date()
+            self.date_var.set(selected_date)
+            self.date_label.config(text=selected_date)
+            top.destroy()
+
+        ttk.Button(top, text="Seç", command=set_date).pack(pady=5)
+
+    def validate_number(self, P):
+        if P == "" or P.isdigit():
+            return True
+        return False
+
+    def save_student(self):
+        try:
+            # Verileri al
+            ad = self.entries["Ad"].get()
+            soyad = self.entries["Soyad"].get()
+            paket = self.paket_var.get()
+            telefon = self.phone_var.get()
+            tarih = self.date_var.get()
+            ucret = int(self.entries["Ücret"].get()) if self.entries["Ücret"].get() else 0
+            odenen = int(self.entries["Ödenen"].get()) if self.entries["Ödenen"].get() else 0
+            ders_saati = int(self.entries["Ders Saati"].get()) if self.entries["Ders Saati"].get() else 0
+            aciklama = self.entries["Açıklama"].get()
+            kalan = ucret - odenen
+
+            # Doğrulama
+            if not ad or not soyad:
+                messagebox.showerror("Hata", "Ad ve soyad bilgileri zorunludur!")
+                return
+
+            if not tarih:
+                messagebox.showerror("Hata", "Lütfen bir tarih seçiniz!")
+                return
+
+            # Öğrenci oluştur
+            ogrenci = {
+                "id": len(self.ogrenciler) + 1,
+                "ad": ad,
+                "soyad": soyad,
+                "paket": paket,
+                "telefon": telefon,
+                "tarih": tarih,
+                "ucret": ucret,
+                "odenen": odenen,
+                "kalan": kalan,
+                "ders_saati": ders_saati,
+                "aciklama": aciklama,
+                "aktif": True
+            }
+
+            # Ders kaydı oluştur
+            ders_kaydi = {
+                "id": len(self.ders_kayitlari) + 1,
+                "ogrenci_id": ogrenci["id"],
+                "ad": ad,
+                "soyad": soyad,
+                "paket": paket,
+                "tarih": tarih,
+                "ders_saati": ders_saati,
+                "yapilan_ders": 0,
+                "kalan_ders": ders_saati
+            }
+
+            # Bilanço verisi
+            bilanco_veri = {
+                "id": len(self.bilanco_data) + 1,
+                "ogrenci_id": ogrenci["id"],
+                "ad": ad,
+                "soyad": soyad,
+                "paket": paket,
+                "tarih": tarih,
+                "telefon": telefon,
+                "ucret": ucret,
+                "odenen": odenen,
+                "kalan": kalan
+            }
+
+            # Listelere ekle
+            self.ogrenciler.append(ogrenci)
+            self.ders_kayitlari.append(ders_kaydi)
+            self.bilanco_data.append(bilanco_veri)
+
+            # Verileri kaydet
+            self.save_data()
+
+            messagebox.showinfo("Başarılı", "Öğrenci başarıyla kaydedildi!")
+
+            # Formu temizle
+            for entry in self.entries.values():
+                if isinstance(entry, ttk.Entry):
+                    entry.delete(0, tk.END)
+            self.paket_var.set("Tek")
+            self.phone_var.set("0")
+            self.date_var.set("")
+            self.date_label.config(text="")
+            self.kalan_tutar_label.config(text="0")
+
+        except Exception as e:
+            messagebox.showerror("Hata", f"Kayıt sırasında hata oluştu: {str(e)}")
+
+    def create_guncel_liste_page(self):
+        self.clear_frame()
+
+        # Geri dön butonu
+        ttk.Button(self.root, text="Ana Sayfa", command=self.create_main_page).pack(anchor=tk.NW, padx=10, pady=10)
+
+        # Başlık
+        ttk.Label(self.root, text="Güncel Öğrenci Listesi", style="Header.TLabel").pack(pady=20)
+
+        # Tablo çerçevesi
+        table_frame = ttk.Frame(self.root)
+        table_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(table_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Tablo
+        columns = ("ID", "Ad", "Soyad", "Paket", "Telefon", "Tarih", "Ders Saati", "Açıklama")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20, yscrollcommand=scrollbar.set)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=100, anchor=tk.CENTER)
+
+        # Aktif öğrencileri listele
+        for ogrenci in self.ogrenciler:
+            if ogrenci["aktif"]:
+                # Kalan ders kontrolü
+                ders_kaydi = next((d for d in self.ders_kayitlari if d["ogrenci_id"] == ogrenci["id"]), None)
+                if ders_kaydi and ders_kaydi["kalan_ders"] <= 2:
+                    tree.insert("", tk.END, values=(
+                        ogrenci["id"],
+                        ogrenci["ad"],
+                        ogrenci["soyad"],
+                        ogrenci["paket"],
+                        ogrenci["telefon"],
+                        ogrenci["tarih"],
+                        ogrenci["ders_saati"],
+                        ogrenci["aciklama"]
+                    ), tags=("warning",))
+                else:
+                    tree.insert("", tk.END, values=(
+                        ogrenci["id"],
+                        ogrenci["ad"],
+                        ogrenci["soyad"],
+                        ogrenci["paket"],
+                        ogrenci["telefon"],
+                        ogrenci["tarih"],
+                        ogrenci["ders_saati"],
+                        ogrenci["aciklama"]
+                    ))
+
+        tree.tag_configure("warning", background="red", foreground="white")
+        scrollbar.config(command=tree.yview)
+        tree.pack(fill=tk.BOTH, expand=True)
+
+        # Aktif öğrenci sayısı
+        aktif_ogrenci = sum(1 for o in self.ogrenciler if o["aktif"])
+        ttk.Label(self.root, text=f"Aktif Öğrenci Sayısı: {aktif_ogrenci}").pack()
+
+    def create_seans_bilgisi_page(self):
+        self.clear_frame()
+
+        # Geri dön butonu
+        ttk.Button(self.root, text="Ana Sayfa", command=self.create_main_page).pack(anchor=tk.NW, padx=10, pady=10)
+
+        # Başlık
+        ttk.Label(self.root, text="Öğrenci Seans Bilgisi", style="Header.TLabel").pack(pady=20)
+
+        # Öğrenci listesi
+        columns = ("ID", "Ad", "Soyad", "Paket", "Telefon", "Toplam Ders", "Kalan Ders")
+        tree = ttk.Treeview(self.root, columns=columns, show="headings", height=15)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=100, anchor=tk.CENTER)
+
+        # Aktif öğrencileri listele
+        for ogrenci in self.ogrenciler:
+            if ogrenci["aktif"]:
+                ders_kaydi = next((d for d in self.ders_kayitlari if d["ogrenci_id"] == ogrenci["id"]), None)
+                toplam_ders = ders_kaydi["ders_saati"] if ders_kaydi else 0
+                kalan_ders = ders_kaydi["kalan_ders"] if ders_kaydi else 0
+
+                tree.insert("", tk.END, values=(
+                    ogrenci["id"],
+                    ogrenci["ad"],
+                    ogrenci["soyad"],
+                    ogrenci["paket"],
+                    ogrenci["telefon"],
+                    toplam_ders,
+                    kalan_ders
+                ))
+
+        tree.pack(pady=10)
+
+        # Seçili öğrencinin seanslarını göster
+        def show_seans_details(event):
+            selected_item = tree.focus()
+            if selected_item:
+                values = tree.item(selected_item, "values")
+                ogrenci_id = int(values[0])
+                self.show_seans_list(ogrenci_id)
+
+        tree.bind("<Double-1>", show_seans_details)
+
+    def show_seans_list(self, ogrenci_id):
+        # Yeni pencere oluştur
+        seans_window = tk.Toplevel(self.root)
+        seans_window.title("Seans Bilgileri")
+        seans_window.geometry("600x400")
+
+        # Öğrenci bilgisi
+        ogrenci = next((o for o in self.ogrenciler if o["id"] == ogrenci_id), None)
+        if not ogrenci:
+            return
+
+        ttk.Label(seans_window, text=f"{ogrenci['ad']} {ogrenci['soyad']} - Seans Geçmişi",
+                  font=("Arial", 12, "bold")).pack(pady=10)
+
+        # Seans listesi
+        columns = ("Tarih", "Saat")
+        tree = ttk.Treeview(seans_window, columns=columns, show="headings", height=15)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=200, anchor=tk.CENTER)
+
+        # Bu öğrenciye ait seansları listele
+        for seans in self.seans_kayitlari:
+            if seans["ogrenci_id"] == ogrenci_id:
+                tree.insert("", tk.END, values=(
+                    seans["tarih"],
+                    seans["saat"]
+                ))
+
+        tree.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+
+        # Sil butonu
+        def delete_seans():
+            selected_item = tree.focus()
+            if not selected_item:
+                messagebox.showerror("Hata", "Lütfen silmek istediğiniz seansı seçiniz!")
+                return
+
+            if not self.check_password():
+                messagebox.showerror("Hata", "Geçersiz parola!")
+                return
+
+            if messagebox.askyesno("Onay", "Seçili seansı silmek istediğinize emin misiniz?"):
+                selected_values = tree.item(selected_item, "values")
+
+                # Seansı listeden kaldır
+                self.seans_kayitlari = [s for s in self.seans_kayitlari
+                                        if not (s["ogrenci_id"] == ogrenci_id and
+                                                s["tarih"] == selected_values[0] and
+                                                s["saat"] == selected_values[1])]
+
+                self.save_data()
+                messagebox.showinfo("Başarılı", "Seans başarıyla silindi!")
+                seans_window.destroy()
+                self.show_seans_list(ogrenci_id)
+
+        ttk.Button(seans_window, text="Seansı Sil", command=delete_seans).pack(pady=10)
+
+    def create_randevu_takvimi(self):
+        self.clear_frame()
+
+        # Arka plan rengi (mavi tonları)
+        self.root.configure(bg="#e6f2ff")
+
+        # Başlık
+        header_frame = ttk.Frame(self.root, style="Header.TFrame")
+        header_frame.pack(pady=20, fill=tk.X)
+        ttk.Label(header_frame, text="RANDEVU TAKVİMİ", style="Header.TLabel").pack()
+
+        # Takvim çerçevesi
+        cal_frame = ttk.Frame(self.root, style="Calendar.TFrame")
+        cal_frame.pack(pady=10, padx=20, fill=tk.BOTH, expand=True)
+
+        # Takvim widget'ı
+        self.cal = Calendar(
+            cal_frame,
+            selectmode='day',
+            year=datetime.now().year,
+            month=datetime.now().month,
+            day=datetime.now().day,
+            locale='tr_TR',
+            background="#4a8fe7",
+            foreground="white",
+            headersbackground="#3a7bd5",
+            normalbackground="#e6f2ff",
+            weekendbackground="#d1e5ff"
+        )
+        self.cal.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        # Seçilen tarih bilgisi
+        selected_frame = ttk.Frame(self.root, style="Info.TFrame")
+        selected_frame.pack(fill=tk.X, padx=20, pady=5)
+        ttk.Label(selected_frame, text="Seçilen Tarih:").pack(side=tk.LEFT)
+        self.selected_date = tk.StringVar(value=self.cal.get_date())
+        ttk.Label(selected_frame, textvariable=self.selected_date,
+                  font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=5)
+
+        # Randevu listesi
+        list_frame = ttk.Frame(self.root, style="List.TFrame")
+        list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
+
+        self.randevu_tree = ttk.Treeview(list_frame, columns=("Saat", "Öğrenci", "Paket"), show="headings")
+        for col in ["Saat", "Öğrenci", "Paket"]:
+            self.randevu_tree.heading(col, text=col)
+            self.randevu_tree.column(col, width=120, anchor=tk.CENTER)
+        self.randevu_tree.pack(fill=tk.BOTH, expand=True)
+
+        # Butonlar
+        btn_frame = ttk.Frame(self.root)
+        btn_frame.pack(pady=10)
+        ttk.Button(btn_frame, text="Yeni Randevu Ekle",
+                   command=self.show_ogrenci_secim).pack(side=tk.LEFT, padx=5)
+        ttk.Button(btn_frame, text="Ana Sayfa",
+                   command=self.create_main_page).pack(side=tk.LEFT, padx=5)
+
+        # Stil ayarları
+        self.style.configure("Header.TFrame", background="#3a7bd5")
+        self.style.configure("Header.TLabel", font=("Arial", 16, "bold"), foreground="white", background="#3a7bd5")
+        self.style.configure("Calendar.TFrame", background="#e6f2ff")
+        self.style.configure("Info.TFrame", background="#cce0ff")
+        self.style.configure("List.TFrame", background="#ffffff")
+
+        # Etkileşimler
+        self.cal.bind("<<CalendarSelected>>", self.load_randevular)
+        self.load_randevular()
+
+    def show_ogrenci_secim(self):
+        # Yeni pencere oluştur
+        self.secim_window = tk.Toplevel(self.root)
+        self.secim_window.title("Öğrenci Seçimi")
+        self.secim_window.geometry("600x400")
+        self.secim_window.grab_set()
+
+        # Başlık
+        ttk.Label(self.secim_window,
+                  text=f"{self.selected_date.get()} - Öğrenci Seçin",
+                  font=("Arial", 12, "bold")).pack(pady=10)
+
+        # Aktif öğrenci listesi
+        tree_frame = ttk.Frame(self.secim_window)
+        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        self.ogrenci_tree = ttk.Treeview(tree_frame, columns=("ID", "Ad", "Soyad", "Paket"), show="headings")
+        for col in ["ID", "Ad", "Soyad", "Paket"]:
+            self.ogrenci_tree.heading(col, text=col)
+            self.ogrenci_tree.column(col, width=100, anchor=tk.CENTER)
+
+        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.ogrenci_tree.yview)
+        self.ogrenci_tree.configure(yscrollcommand=scrollbar.set)
+
+        scrollbar.pack(side="right", fill="y")
+        self.ogrenci_tree.pack(side="left", fill=tk.BOTH, expand=True)
+
+        # Aktif öğrencileri yükle
+        for ogrenci in self.ogrenciler:
+            if ogrenci["aktif"]:
+                self.ogrenci_tree.insert("", tk.END, values=(
+                    ogrenci["id"],
+                    ogrenci["ad"],
+                    ogrenci["soyad"],
+                    ogrenci["paket"]
+                ))
+
+        # Saat seçimi
+        time_frame = ttk.Frame(self.secim_window)
+        time_frame.pack(pady=10)
+
+        ttk.Label(time_frame, text="Ders Saati:").pack(side=tk.LEFT)
+        self.saat_var = tk.StringVar(value="10:00")
+
+        # 08:00-20:00 arası saatler (30 dakikalık aralıklarla)
+        saatler = [f"{h:02d}:{m:02d}" for h in range(8, 21) for m in [0, 30]]
+        saat_combobox = ttk.Combobox(time_frame, textvariable=self.saat_var,
+                                     values=saatler, state="readonly", width=10)
+        saat_combobox.pack(side=tk.LEFT, padx=5)
+
+        # Butonlar
+        btn_frame = ttk.Frame(self.secim_window)
+        btn_frame.pack(pady=10)
+
+        ttk.Button(btn_frame, text="Randevu Ekle",
+                   command=self.randevu_ekle).pack(side=tk.LEFT, padx=10)
+        ttk.Button(btn_frame, text="İptal",
+                   command=self.secim_window.destroy).pack(side=tk.LEFT, padx=10)
+
+    def randevu_ekle(self):
+        selected_item = self.ogrenci_tree.focus()
+        if not selected_item:
+            messagebox.showerror("Hata", "Lütfen bir öğrenci seçiniz!")
+            return
+
+        values = self.ogrenci_tree.item(selected_item, "values")
+        ogrenci_id = int(values[0])
+        ogrenci = next((o for o in self.ogrenciler if o["id"] == ogrenci_id), None)
+
+        if not ogrenci:
+            messagebox.showerror("Hata", "Öğrenci bulunamadı!")
+            return
+
+        # Randevu bilgileri
+        randevu_tarihi = self.selected_date.get()
+        randevu_saati = self.saat_var.get()
+
+        # Aynı saatte başka randevu var mı kontrol et
+        for randevu in self.seans_kayitlari:
+            if randevu["tarih"] == randevu_tarihi and randevu["saat"] == randevu_saati:
+                messagebox.showerror("Hata", "Bu saatte zaten randevu var!")
+                return
+
+        # Yeni randevu oluştur
+        yeni_randevu = {
+            "id": len(self.seans_kayitlari) + 1,
+            "ogrenci_id": ogrenci_id,
+            "ad": ogrenci["ad"],
+            "soyad": ogrenci["soyad"],
+            "tarih": randevu_tarihi,
+            "saat": randevu_saati,
+            "paket": ogrenci["paket"],
+            "durum": "Bekliyor"
+        }
+
+        self.seans_kayitlari.append(yeni_randevu)
+        self.save_data()
+
+        messagebox.showinfo("Başarılı",
+                            f"{ogrenci['ad']} {ogrenci['soyad']} için randevu oluşturuldu!\nTarih: {randevu_tarihi}\nSaat: {randevu_saati}")
+        self.secim_window.destroy()
+        self.load_randevular()
+
+    def load_randevular(self, event=None):
+        selected_date = self.cal.get_date()
+        self.selected_date.set(selected_date)
+
+        # Treeview'ı temizle
+        for row in self.randevu_tree.get_children():
+            self.randevu_tree.delete(row)
+
+        # Seçilen tarihteki randevuları yükle
+        for randevu in self.seans_kayitlari:
+            if randevu["tarih"] == selected_date:
+                ogrenci = next((o for o in self.ogrenciler if o["id"] == randevu["ogrenci_id"]), None)
+                if ogrenci:
+                    self.randevu_tree.insert("", tk.END, values=(
+                        randevu["saat"],
+                        f"{ogrenci['ad']} {ogrenci['soyad']}",
+                        ogrenci["paket"]
+                    ))
+
+    def create_ders_takip_page(self):
+        self.clear_frame()
+
+        # Geri dön butonu
+        ttk.Button(self.root, text="Ana Sayfa", command=self.create_main_page).pack(anchor=tk.NW, padx=10, pady=10)
+
+        # Başlık
+        ttk.Label(self.root, text="Ders Takip Listesi", style="Header.TLabel").pack(pady=20)
+
+        # Tablo çerçevesi
+        table_frame = ttk.Frame(self.root)
+        table_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(table_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Tablo
+        columns = ("ID", "Ad", "Soyad", "Paket", "Tarih", "Ders Saati", "Yapılan Ders", "Kalan Ders", "İşlem")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20, yscrollcommand=scrollbar.set)
+
+        # Sütun başlıkları ve genişlikleri
+        col_widths = [50, 100, 100, 80, 100, 80, 80, 80, 80]
+        for col, width in zip(columns, col_widths):
+            tree.heading(col, text=col)
+            tree.column(col, width=width, anchor=tk.CENTER)
+
+        # Ders kayıtlarını listele
+        for kayit in self.ders_kayitlari:
+            ogrenci = next((o for o in self.ogrenciler if o["id"] == kayit["ogrenci_id"]), None)
+            if ogrenci and ogrenci["aktif"]:
+                tag = "warning" if kayit["kalan_ders"] <= 2 else ""
+                tree.insert("", tk.END, values=(
+                    kayit["id"],
+                    kayit["ad"],
+                    kayit["soyad"],
+                    kayit["paket"],
+                    kayit["tarih"],
+                    kayit["ders_saati"],
+                    kayit["yapilan_ders"],
+                    kayit["kalan_ders"],
+                    "+1 Ders"
+                ), tags=(tag,))
+
+        tree.tag_configure("warning", background="red", foreground="white")
+        scrollbar.config(command=tree.yview)
+        tree.pack(fill=tk.BOTH, expand=True)
+
+        # +1 Ders işlevi
+        def on_add_lesson(event):
+            region = tree.identify("region", event.x, event.y)
+            if region == "cell":
+                column = tree.identify_column(event.x)
+                item = tree.identify_row(event.y)
+
+                if column == "#9":  # İşlem sütunu
+                    values = tree.item(item, "values")
+                    if values and len(values) >= 8:
+                        kayit_id = int(values[0])
+
+                        # Tarih ve saat seçme penceresi
+                        date_window = tk.Toplevel(self.root)
+                        date_window.title("Ders Tarihi ve Saati")
+                        date_window.geometry("450x400")
+                        date_window.grab_set()
+                        date_window.resizable(False, False)
+
+                        # Tarih seçimi
+                        ttk.Label(date_window, text="Ders Tarihi:", font=("Arial", 12, "bold")).pack(pady=(10, 5))
+                        cal = Calendar(date_window, selectmode='day',
+                                       year=datetime.now().year,
+                                       month=datetime.now().month,
+                                       day=datetime.now().day,
+                                       font=("Arial", 12),
+                                       date_pattern="dd/mm/yyyy")
+                        cal.pack(pady=5)
+
+                        # Saat seçimi (08:00-24:00)
+                        ttk.Label(date_window, text="Ders Saati:", font=("Arial", 12, "bold")).pack(pady=(10, 5))
+                        time_frame = ttk.Frame(date_window)
+                        time_frame.pack()
+
+                        hours = [f"{h:02d}" for h in range(8, 25)]  # 08:00-24:00
+                        minutes = [f"{m:02d}" for m in range(0, 60, 5)]  # 5 dakikalık aralıklar
+
+                        hour_var = tk.StringVar(value=datetime.now().strftime("%H"))
+                        min_var = tk.StringVar(value="00")
+
+                        ttk.Combobox(time_frame, values=hours, textvariable=hour_var,
+                                     width=5, font=("Arial", 12), state="readonly").pack(side=tk.LEFT, padx=5)
+                        ttk.Label(time_frame, text=":", font=("Arial", 12)).pack(side=tk.LEFT)
+                        ttk.Combobox(time_frame, values=minutes, textvariable=min_var,
+                                     width=5, font=("Arial", 12), state="readonly").pack(side=tk.LEFT, padx=5)
+
+                        # Onay butonları
+                        button_frame = ttk.Frame(date_window)
+                        button_frame.pack(pady=20)
+
+                        def confirm_lesson():
+                            selected_date = cal.get_date()
+                            selected_time = f"{hour_var.get()}:{min_var.get()}"
+
+                            try:
+                                datetime.strptime(selected_time, "%H:%M")
+                                datetime.strptime(selected_date, "%d/%m/%Y")
+                            except ValueError:
+                                messagebox.showerror("Hata",
+                                                     "Geçersiz tarih/saat formatı!\nTarih: GG/AA/YYYY\nSaat: HH:MM")
+                                return
+
+                            for kayit in self.ders_kayitlari:
+                                if kayit["id"] == kayit_id:
+                                    # Güncellemeleri yap
+                                    kayit["yapilan_ders"] += 1
+                                    kayit["kalan_ders"] = kayit["ders_saati"] - kayit["yapilan_ders"]
+
+                                    # Seans kaydı ekle
+                                    self.seans_kayitlari.append({
+                                        "id": len(self.seans_kayitlari) + 1,
+                                        "ogrenci_id": kayit["ogrenci_id"],
+                                        "ad": kayit["ad"],
+                                        "soyad": kayit["soyad"],
+                                        "tarih": selected_date,
+                                        "saat": selected_time
+                                    })
+
+                                    # Kalan ders kontrolü
+                                    if kayit["kalan_ders"] == 0:
+                                        if messagebox.askyesno("Uyarı",
+                                                               "Kalan ders sayısı 0! Öğrenciyi pasif yapmak ister misiniz?"):
+                                            for ogrenci in self.ogrenciler:
+                                                if ogrenci["id"] == kayit["ogrenci_id"]:
+                                                    ogrenci["aktif"] = False
+                                                    break
+
+                                    self.save_data()
+                                    messagebox.showinfo("Başarılı", f"Ders eklendi:\n{selected_date} {selected_time}")
+                                    date_window.destroy()
+                                    self.create_ders_takip_page()
+                                    return
+
+                        # Buton stilleri
+                        self.style.configure("Bold.TButton", font=("Arial", 12, "bold"), padding=8)
+
+                        ttk.Button(button_frame, text="ONAYLA", command=confirm_lesson,
+                                   style="Bold.TButton").pack(side=tk.LEFT, padx=15)
+                        ttk.Button(button_frame, text="İPTAL", command=date_window.destroy,
+                                   style="Bold.TButton").pack(side=tk.LEFT, padx=15)
+
+        # Treeview'a tıklama olayını bağla
+        tree.bind("<ButtonRelease-1>", on_add_lesson)
+
+        # Aktif öğrenci sayısı
+        aktif_ogrenci = sum(1 for o in self.ogrenciler if o["aktif"])
+        ttk.Label(self.root, text=f"Aktif Öğrenci Sayısı: {aktif_ogrenci}").pack(pady=10)
+
+    def create_tum_ogrenciler_page(self):
+        self.clear_frame()
+
+        # Geri dön butonu
+        ttk.Button(self.root, text="Ana Sayfa", command=self.create_main_page).pack(anchor=tk.NW, padx=10, pady=10)
+
+        # Başlık
+        ttk.Label(self.root, text="Tüm Öğrenciler Listesi", style="Header.TLabel").pack(pady=20)
+
+        # Tablo çerçevesi
+        table_frame = ttk.Frame(self.root)
+        table_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(table_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Tablo
+        columns = ("ID", "Ad", "Soyad", "Paket", "Telefon", "Tarih", "Toplam Ders", "Kalan Ders", "Açıklama", "Durum")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=20, yscrollcommand=scrollbar.set)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=80, anchor=tk.CENTER)
+
+        # Tüm öğrencileri listele (ORJİNAL DERS SAATİNİ KORU)
+        for ogrenci in self.ogrenciler:
+            durum = "Aktif" if ogrenci["aktif"] else "Pasif"
+            ders_kaydi = next((d for d in self.ders_kayitlari if d["ogrenci_id"] == ogrenci["id"]), None)
+
+            # Toplam ders saati (orijinal) ve kalan ders
+            toplam_ders = ders_kaydi["ders_saati"] if ders_kaydi else 0
+            kalan_ders = ders_kaydi["kalan_ders"] if ders_kaydi else 0
+
+            if not ogrenci["aktif"]:
+                tree.insert("", tk.END, values=(
+                    ogrenci["id"],
+                    ogrenci["ad"],
+                    ogrenci["soyad"],
+                    ogrenci["paket"],
+                    ogrenci["telefon"],
+                    ogrenci["tarih"],
+                    toplam_ders,  # ORJİNAL ders saati (değişmez)
+                    kalan_ders,
+                    ogrenci["aciklama"],
+                    durum
+                ), tags=("inactive",))
+            else:
+                tree.insert("", tk.END, values=(
+                    ogrenci["id"],
+                    ogrenci["ad"],
+                    ogrenci["soyad"],
+                    ogrenci["paket"],
+                    ogrenci["telefon"],
+                    ogrenci["tarih"],
+                    toplam_ders,  # ORJİNAL ders saati (değişmez)
+                    kalan_ders,
+                    ogrenci["aciklama"],
+                    durum
+                ))
+
+        tree.tag_configure("inactive", background="#f0f0f0")
+        scrollbar.config(command=tree.yview)
+        tree.pack(fill=tk.BOTH, expand=True)
+
+    def create_bilanco_page(self):
+        self.clear_frame()
+
+        # Geri dön butonu
+        ttk.Button(self.root, text="Ana Sayfa", command=self.create_main_page).pack(anchor=tk.NW, padx=10, pady=10)
+
+        # Başlık
+        ttk.Label(self.root, text="Bilanço", style="Header.TLabel").pack(pady=20)
+
+        # Tablo çerçevesi
+        table_frame = ttk.Frame(self.root)
+        table_frame.pack(fill=tk.BOTH, expand=True)
+
+        # Scrollbar
+        scrollbar = ttk.Scrollbar(table_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        # Tablo
+        columns = ("ID", "Ad", "Soyad", "Paket", "Tarih", "Telefon", "Ücret", "Ödenen", "Kalan", "İşlem")
+        tree = ttk.Treeview(table_frame, columns=columns, show="headings", height=15, yscrollcommand=scrollbar.set)
+
+        for col in columns:
+            tree.heading(col, text=col)
+            tree.column(col, width=80, anchor=tk.CENTER)
+
+        # Bilanço verilerini listele
+        for veri in self.bilanco_data:
+            if veri["kalan"] > 0:
+                tree.insert("", tk.END, values=(
+                    veri["id"],
+                    veri["ad"],
+                    veri["soyad"],
+                    veri["paket"],
+                    veri["tarih"],
+                    veri["telefon"],
+                    veri["ucret"],
+                    veri["odenen"],
+                    veri["kalan"],
+                    "Ödeme Ekle"
+                ), tags=("warning",))
+            else:
+                tree.insert("", tk.END, values=(
+                    veri["id"],
+                    veri["ad"],
+                    veri["soyad"],
+                    veri["paket"],
+                    veri["tarih"],
+                    veri["telefon"],
+                    veri["ucret"],
+                    veri["odenen"],
+                    veri["kalan"],
+                    "Ödeme Ekle"
+                ))
+
+        tree.tag_configure("warning", background="red", foreground="white")
+        scrollbar.config(command=tree.yview)
+        tree.pack(fill=tk.BOTH, expand=True)
+
+        # Toplam bilgileri
+        toplam_ucret = sum(o["ucret"] for o in self.ogrenciler)
+        toplam_odenen = sum(o["odenen"] for o in self.ogrenciler)
+        toplam_kalan = sum(o["kalan"] for o in self.ogrenciler)
+
+        ttk.Label(self.root, text=f"Toplam Ücret: {toplam_ucret} ₺").pack()
+        ttk.Label(self.root, text=f"Toplam Ödenen: {toplam_odenen} ₺").pack()
+        ttk.Label(self.root, text=f"Toplam Kalan: {toplam_kalan} ₺").pack()
+
+        # Ödeme ekleme işlevi
+        def add_payment(event):
+            item = tree.focus()
+            values = tree.item(item, "values")
+            if values and len(values) >= 9:
+                veri_id = int(values[0])
+                for veri in self.bilanco_data:
+                    if veri["id"] == veri_id:
+                        amount = simpledialog.askinteger("Ödeme Ekle", "Ödeme miktarını girin:")
+                        if amount:
+                            veri["odenen"] += amount
+                            veri["kalan"] = veri["ucret"] - veri["odenen"]
+
+                            # Öğrenci bilgilerini güncelle
+                            for ogrenci in self.ogrenciler:
+                                if ogrenci["id"] == veri["ogrenci_id"]:
+                                    ogrenci["odenen"] = veri["odenen"]
+                                    ogrenci["kalan"] = veri["kalan"]
+                                    break
+
+                            self.save_data()
+                            self.create_bilanco_page()
+                        break
+
+        tree.bind("<Double-1>", add_payment)
+
+        # Grafik oluştur
+        self.create_bilanco_chart()
+
+    def create_bilanco_chart(self):
+        # Aylık ödeme analizi
+        df = pd.DataFrame(self.bilanco_data)
+        df['tarih'] = pd.to_datetime(df['tarih'])
+        df['ay'] = df['tarih'].dt.strftime('%Y-%m')
+
+        aylik_odeme = df.groupby('ay')['odenen'].sum().reset_index()
+        aylik_ucret = df.groupby('ay')['ucret'].sum().reset_index()
+
+        # Grafik çerçevesi
+        fig = Figure(figsize=(10, 5), dpi=100)
+
+        # Kutu grafik (Box Plot)
+        plot1 = fig.add_subplot(121)
+        plot1.boxplot([df['ucret'], df['odenen'], df['kalan']],
+                      labels=['Toplam Ücret', 'Ödenen', 'Kalan'])
+        plot1.set_title('Ödeme Dağılımı')
+        plot1.set_ylabel('Tutar (₺)')
+
+        # Çubuk grafik
+        plot2 = fig.add_subplot(122)
+        plot2.bar(aylik_odeme['ay'], aylik_odeme['odenen'], label='Ödenen', color='green')
+        plot2.bar(aylik_ucret['ay'], aylik_ucret['ucret'], label='Toplam Ücret', alpha=0.5, color='blue')
+        plot2.set_title('Aylık Ödeme Analizi')
+        plot2.set_xlabel('Ay')
+        plot2.set_ylabel('Tutar (₺)')
+        plot2.legend()
+
+        # Canvas oluştur
+        canvas = FigureCanvasTkAgg(fig, master=self.root)
+        canvas.draw()
+        canvas.get_tk_widget().pack(pady=10)
+
+    def export_to_excel(self):
+        try:
+            # Tarih bilgisini ekleyerek dosya adı oluştur
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"no9_pilates_rapor_{timestamp}.xlsx"
+
+            # Excel dosyası oluştur
+            with pd.ExcelWriter(filename, engine='openpyxl') as writer:
+                # Öğrenci listesi
+                ogrenci_df = pd.DataFrame(self.ogrenciler)
+                ogrenci_df.to_excel(writer, sheet_name='Tüm_Öğrenciler', index=False)
+
+                # Aktif öğrenciler
+                aktif_df = pd.DataFrame([o for o in self.ogrenciler if o["aktif"]])
+                aktif_df.to_excel(writer, sheet_name='Aktif_Öğrenciler', index=False)
+
+                # Ders kayıtları
+                ders_df = pd.DataFrame(self.ders_kayitlari)
+                ders_df.to_excel(writer, sheet_name='Ders_Kayıtları', index=False)
+
+                # Bilanço
+                bilanco_df = pd.DataFrame(self.bilanco_data)
+                bilanco_df.to_excel(writer, sheet_name='Bilanço', index=False)
+
+                # Aylık özet
+                df = pd.DataFrame(self.bilanco_data)
+                df['tarih'] = pd.to_datetime(df['tarih'])
+                df['ay'] = df['tarih'].dt.strftime('%Y-%m')
+                aylik_odeme = df.groupby('ay')['odenen'].sum().reset_index()
+                aylik_ucret = df.groupby('ay')['ucret'].sum().reset_index()
+                aylik_ozet = pd.merge(aylik_ucret, aylik_odeme, on='ay')
+                aylik_ozet['kalan'] = aylik_ozet['ucret'] - aylik_ozet['odenen']
+                aylik_ozet.to_excel(writer, sheet_name='Aylık_Özet', index=False)
+
+            messagebox.showinfo("Başarılı", f"Veriler başarıyla Excel'e aktarıldı:\n{os.path.abspath(filename)}")
+
+            # Excel dosyasını otomatik açma
+            try:
+                os.startfile(os.path.abspath(filename))
+            except:
+                pass
+
+        except Exception as e:
+            messagebox.showerror("Hata", f"Excel'e aktarım sırasında hata oluştu:\n{str(e)}")
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = No9PilatesApp(root)
+    root.mainloop()
