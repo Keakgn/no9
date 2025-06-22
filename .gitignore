@@ -161,8 +161,7 @@ class No9PilatesApp:
             "1. Yeni Kayıt",
             "2. Güncel Öğrenci Listesi",
             "3. Ders Takip Listesi",
-            "4. Öğrenci Seans Bilgisi",  # Yeni buton
-            "5. Randevu Takvimi",
+            "4. Öğrenci Yoklama Bilgisi",  # Yeni buton
             "6. Tüm Öğrenciler",
             "7. Bilanço",
             "8. Excel'e Aktar",
@@ -175,7 +174,6 @@ class No9PilatesApp:
             self.create_guncel_liste_page,
             self.create_ders_takip_page,
             self.create_seans_bilgisi_page,  # Yeni fonksiyon
-            self.create_randevu_takvimi,
             self.create_tum_ogrenciler_page,
             self.create_bilanco_page,
             self.export_to_excel,
@@ -653,195 +651,6 @@ class No9PilatesApp:
 
         ttk.Button(seans_window, text="Seansı Sil", command=delete_seans).pack(pady=10)
 
-    def create_randevu_takvimi(self):
-        self.clear_frame()
-
-        # Arka plan rengi (mavi tonları)
-        self.root.configure(bg="#e6f2ff")
-
-        # Başlık
-        header_frame = ttk.Frame(self.root, style="Header.TFrame")
-        header_frame.pack(pady=20, fill=tk.X)
-        ttk.Label(header_frame, text="RANDEVU TAKVİMİ", style="Header.TLabel").pack()
-
-        # Takvim çerçevesi
-        cal_frame = ttk.Frame(self.root, style="Calendar.TFrame")
-        cal_frame.pack(pady=10, padx=20, fill=tk.BOTH, expand=True)
-
-        # Takvim widget'ı
-        self.cal = Calendar(
-            cal_frame,
-            selectmode='day',
-            year=datetime.now().year,
-            month=datetime.now().month,
-            day=datetime.now().day,
-            locale='tr_TR',
-            background="#4a8fe7",
-            foreground="white",
-            headersbackground="#3a7bd5",
-            normalbackground="#e6f2ff",
-            weekendbackground="#d1e5ff"
-        )
-        self.cal.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        # Seçilen tarih bilgisi
-        selected_frame = ttk.Frame(self.root, style="Info.TFrame")
-        selected_frame.pack(fill=tk.X, padx=20, pady=5)
-        ttk.Label(selected_frame, text="Seçilen Tarih:").pack(side=tk.LEFT)
-        self.selected_date = tk.StringVar(value=self.cal.get_date())
-        ttk.Label(selected_frame, textvariable=self.selected_date,
-                  font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=5)
-
-        # Randevu listesi
-        list_frame = ttk.Frame(self.root, style="List.TFrame")
-        list_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=10)
-
-        self.randevu_tree = ttk.Treeview(list_frame, columns=("Saat", "Öğrenci", "Paket"), show="headings")
-        for col in ["Saat", "Öğrenci", "Paket"]:
-            self.randevu_tree.heading(col, text=col)
-            self.randevu_tree.column(col, width=120, anchor=tk.CENTER)
-        self.randevu_tree.pack(fill=tk.BOTH, expand=True)
-
-        # Butonlar
-        btn_frame = ttk.Frame(self.root)
-        btn_frame.pack(pady=10)
-        ttk.Button(btn_frame, text="Yeni Randevu Ekle",
-                   command=self.show_ogrenci_secim).pack(side=tk.LEFT, padx=5)
-        ttk.Button(btn_frame, text="Ana Sayfa",
-                   command=self.create_main_page).pack(side=tk.LEFT, padx=5)
-
-        # Stil ayarları
-        self.style.configure("Header.TFrame", background="#3a7bd5")
-        self.style.configure("Header.TLabel", font=("Arial", 16, "bold"), foreground="white", background="#3a7bd5")
-        self.style.configure("Calendar.TFrame", background="#e6f2ff")
-        self.style.configure("Info.TFrame", background="#cce0ff")
-        self.style.configure("List.TFrame", background="#ffffff")
-
-        # Etkileşimler
-        self.cal.bind("<<CalendarSelected>>", self.load_randevular)
-        self.load_randevular()
-
-    def show_ogrenci_secim(self):
-        # Yeni pencere oluştur
-        self.secim_window = tk.Toplevel(self.root)
-        self.secim_window.title("Öğrenci Seçimi")
-        self.secim_window.geometry("600x400")
-        self.secim_window.grab_set()
-
-        # Başlık
-        ttk.Label(self.secim_window,
-                  text=f"{self.selected_date.get()} - Öğrenci Seçin",
-                  font=("Arial", 12, "bold")).pack(pady=10)
-
-        # Aktif öğrenci listesi
-        tree_frame = ttk.Frame(self.secim_window)
-        tree_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
-
-        self.ogrenci_tree = ttk.Treeview(tree_frame, columns=("ID", "Ad", "Soyad", "Paket"), show="headings")
-        for col in ["ID", "Ad", "Soyad", "Paket"]:
-            self.ogrenci_tree.heading(col, text=col)
-            self.ogrenci_tree.column(col, width=100, anchor=tk.CENTER)
-
-        scrollbar = ttk.Scrollbar(tree_frame, orient="vertical", command=self.ogrenci_tree.yview)
-        self.ogrenci_tree.configure(yscrollcommand=scrollbar.set)
-
-        scrollbar.pack(side="right", fill="y")
-        self.ogrenci_tree.pack(side="left", fill=tk.BOTH, expand=True)
-
-        # Aktif öğrencileri yükle
-        for ogrenci in self.ogrenciler:
-            if ogrenci["aktif"]:
-                self.ogrenci_tree.insert("", tk.END, values=(
-                    ogrenci["id"],
-                    ogrenci["ad"],
-                    ogrenci["soyad"],
-                    ogrenci["paket"]
-                ))
-
-        # Saat seçimi
-        time_frame = ttk.Frame(self.secim_window)
-        time_frame.pack(pady=10)
-
-        ttk.Label(time_frame, text="Ders Saati:").pack(side=tk.LEFT)
-        self.saat_var = tk.StringVar(value="10:00")
-
-        # 08:00-20:00 arası saatler (30 dakikalık aralıklarla)
-        saatler = [f"{h:02d}:{m:02d}" for h in range(8, 21) for m in [0, 30]]
-        saat_combobox = ttk.Combobox(time_frame, textvariable=self.saat_var,
-                                     values=saatler, state="readonly", width=10)
-        saat_combobox.pack(side=tk.LEFT, padx=5)
-
-        # Butonlar
-        btn_frame = ttk.Frame(self.secim_window)
-        btn_frame.pack(pady=10)
-
-        ttk.Button(btn_frame, text="Randevu Ekle",
-                   command=self.randevu_ekle).pack(side=tk.LEFT, padx=10)
-        ttk.Button(btn_frame, text="İptal",
-                   command=self.secim_window.destroy).pack(side=tk.LEFT, padx=10)
-
-    def randevu_ekle(self):
-        selected_item = self.ogrenci_tree.focus()
-        if not selected_item:
-            messagebox.showerror("Hata", "Lütfen bir öğrenci seçiniz!")
-            return
-
-        values = self.ogrenci_tree.item(selected_item, "values")
-        ogrenci_id = int(values[0])
-        ogrenci = next((o for o in self.ogrenciler if o["id"] == ogrenci_id), None)
-
-        if not ogrenci:
-            messagebox.showerror("Hata", "Öğrenci bulunamadı!")
-            return
-
-        # Randevu bilgileri
-        randevu_tarihi = self.selected_date.get()
-        randevu_saati = self.saat_var.get()
-
-        # Aynı saatte başka randevu var mı kontrol et
-        for randevu in self.seans_kayitlari:
-            if randevu["tarih"] == randevu_tarihi and randevu["saat"] == randevu_saati:
-                messagebox.showerror("Hata", "Bu saatte zaten randevu var!")
-                return
-
-        # Yeni randevu oluştur
-        yeni_randevu = {
-            "id": len(self.seans_kayitlari) + 1,
-            "ogrenci_id": ogrenci_id,
-            "ad": ogrenci["ad"],
-            "soyad": ogrenci["soyad"],
-            "tarih": randevu_tarihi,
-            "saat": randevu_saati,
-            "paket": ogrenci["paket"],
-            "durum": "Bekliyor"
-        }
-
-        self.seans_kayitlari.append(yeni_randevu)
-        self.save_data()
-
-        messagebox.showinfo("Başarılı",
-                            f"{ogrenci['ad']} {ogrenci['soyad']} için randevu oluşturuldu!\nTarih: {randevu_tarihi}\nSaat: {randevu_saati}")
-        self.secim_window.destroy()
-        self.load_randevular()
-
-    def load_randevular(self, event=None):
-        selected_date = self.cal.get_date()
-        self.selected_date.set(selected_date)
-
-        # Treeview'ı temizle
-        for row in self.randevu_tree.get_children():
-            self.randevu_tree.delete(row)
-
-        # Seçilen tarihteki randevuları yükle
-        for randevu in self.seans_kayitlari:
-            if randevu["tarih"] == selected_date:
-                ogrenci = next((o for o in self.ogrenciler if o["id"] == randevu["ogrenci_id"]), None)
-                if ogrenci:
-                    self.randevu_tree.insert("", tk.END, values=(
-                        randevu["saat"],
-                        f"{ogrenci['ad']} {ogrenci['soyad']}",
-                        ogrenci["paket"]
-                    ))
 
     def create_ders_takip_page(self):
         self.clear_frame()
